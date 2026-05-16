@@ -50,6 +50,7 @@ export default function Theme() {
                     { value: "warm", label: "Warm (sepia tint)" },
                     { value: "cool", label: "Cool" },
                     { value: "ivory", label: "Ivory" },
+                    { value: "color", label: "Color (full color photos)" },
                   ]} />
         </div>
       </div>

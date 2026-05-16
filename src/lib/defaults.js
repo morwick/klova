@@ -158,6 +158,7 @@ export const TONE_PRESETS = {
   warm:  { ink: "#1a1410", paper: "#f3eee5", filter: "grayscale(95%) sepia(0.12) contrast(1.04)" },
   cool:  { ink: "#0b0e12", paper: "#eef0f1", filter: "grayscale(98%) contrast(1.06) brightness(0.98)" },
   ivory: { ink: "#141414", paper: "#ede9df", filter: "grayscale(100%) contrast(1.05)" },
+  color: { ink: "#0a0a0a", paper: "#f6f5f1", filter: "none" },
 };
 
 export const FONT_FAMILIES = {
