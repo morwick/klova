@@ -1,16 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Hardcoded Supabase project credentials. The anon key is safe to expose in
+// client code (it's public by design) — actual data access is gated by Row
+// Level Security in Supabase. Env vars still override these if provided.
+const SUPABASE_URL = "https://mbcnfbqeuglejcxpvypu.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iY25mYnFldWdsZWpjeHB2eXB1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4OTU0MDIsImV4cCI6MjA5NDQ3MTQwMn0.YQx0-6_dIne7yQJA4-EYlv_58MPc8QtCL8C8Ni702NY";
 
-if (!url || !anonKey) {
-  // Surfaced loudly so a missing .env is obvious during setup.
-  console.error(
-    "[klova] Missing Supabase env vars. Copy .env.example to .env and fill VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY."
-  );
-}
+const url = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
-export const supabase = createClient(url || "http://localhost", anonKey || "public-anon-key");
+export const supabase = createClient(url, anonKey);
 
 // Public bucket that holds uploaded work / hero / about photos.
 export const STORAGE_BUCKET = "works";
