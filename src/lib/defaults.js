@@ -71,6 +71,8 @@ export const DEFAULT_SETTINGS = {
     metaSinceValue: "MMXIX",
     image_path: "",
     seed: "klova-hero",
+    focal_x: 50,
+    focal_y: 50,
     featuredCaption: "Featured / no. 124 — Naia, predawn",
     featuredTag: "35mm / film",
   },
@@ -103,6 +105,8 @@ export const DEFAULT_SETTINGS = {
     ],
     image_path: "",
     seed: "klova-about",
+    focal_x: 50,
+    focal_y: 50,
   },
   footer: {
     brand: "klova",

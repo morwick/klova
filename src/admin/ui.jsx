@@ -139,3 +139,56 @@ export function ImagePicker({ label, value, seed, onPath, onSeed, onToast }) {
     </div>
   );
 }
+
+// ─── focal point ────────────────────────────────────
+// Click or drag on the photo to choose which part stays visible when the
+// image is cropped to fill a frame (uniform / dense gallery layouts use
+// object-fit: cover). Stores x/y as 0–100 percentages.
+export function FocalPointPicker({ label, image_path, seed, x = 50, y = 50, onChange }) {
+  const stageRef = useRef();
+  const [drag, setDrag] = useState(false);
+  const src = imageUrl({ image_path, seed }, 800, 1000);
+
+  const apply = useCallback((e) => {
+    const box = stageRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const p = e.touches ? e.touches[0] : e;
+    const nx = Math.min(100, Math.max(0, Math.round(((p.clientX - box.left) / box.width) * 100)));
+    const ny = Math.min(100, Math.max(0, Math.round(((p.clientY - box.top) / box.height) * 100)));
+    onChange(nx, ny);
+  }, [onChange]);
+
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="focal">
+        <div
+          ref={stageRef}
+          className="focal-stage"
+          onMouseDown={(e) => { setDrag(true); apply(e); }}
+          onMouseMove={(e) => { if (drag) apply(e); }}
+          onMouseUp={() => setDrag(false)}
+          onMouseLeave={() => setDrag(false)}
+          onTouchStart={apply}
+          onTouchMove={apply}
+        >
+          <img className="focal-img" src={src} alt="" draggable={false} />
+          <span className="focal-dot" style={{ left: `${x}%`, top: `${y}%` }} />
+        </div>
+        <div className="focal-previews">
+          {[["4 / 5", "Uniform"], ["1 / 1", "Dense"]].map(([ar, name]) => (
+            <div key={name} className="focal-prev">
+              <div className="focal-prev-frame" style={{ aspectRatio: ar }}>
+                <img src={src} alt="" style={{ objectPosition: `${x}% ${y}%` }} />
+              </div>
+              <span className="focal-prev-cap">{name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="help">
+        Focal point {x}% / {y}% — click or drag on the photo to choose what stays in frame.
+      </p>
+    </div>
+  );
+}

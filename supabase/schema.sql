@@ -25,12 +25,18 @@ create table if not exists works (
   seed          text,                       -- picsum fallback seed (before upload)
   width         int  default 1200,
   height        int  default 1500,
+  focal_x       int  default 50,            -- horizontal focal point, 0–100 (% from left)
+  focal_y       int  default 50,            -- vertical focal point, 0–100 (% from top)
   sort_order    int  default 0,
   published     boolean default true,
   created_at    timestamptz default now()
 );
 create index if not exists works_category_idx on works (category_id);
 create index if not exists works_sort_idx on works (sort_order);
+
+-- backfill columns on databases created before the focal-point feature
+alter table works add column if not exists focal_x int default 50;
+alter table works add column if not exists focal_y int default 50;
 
 create table if not exists services (
   id          uuid primary key default gen_random_uuid(),

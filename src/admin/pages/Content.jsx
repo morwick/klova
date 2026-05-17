@@ -1,5 +1,5 @@
 import { useSettings } from "../useSettings.js";
-import { useToast, Text, Area, Toggle, StringList, ImagePicker } from "../ui.jsx";
+import { useToast, Text, Area, Toggle, StringList, ImagePicker, FocalPointPicker } from "../ui.jsx";
 
 export default function Content() {
   const { settings, setPath, setSettings, save, saving } = useSettings();
@@ -73,6 +73,12 @@ export default function Content() {
         <ImagePicker label="Hero image" value={s.hero.image_path} seed={s.hero.seed}
                      onPath={(p) => setPath("hero.image_path", p)}
                      onSeed={(v) => setPath("hero.seed", v)} onToast={showToast} />
+        <FocalPointPicker
+          label="Hero photo position in frame"
+          image_path={s.hero.image_path} seed={s.hero.seed}
+          x={s.hero.focal_x ?? 50} y={s.hero.focal_y ?? 50}
+          onChange={(fx, fy) => mut((n) => { n.hero.focal_x = fx; n.hero.focal_y = fy; })}
+        />
       </div>
 
       {/* CATALOGUE HEADER */}
@@ -131,6 +137,14 @@ export default function Content() {
           <ImagePicker label="Studio figure image" value={s.about.image_path} seed={s.about.seed}
                        onPath={(p) => setPath("about.image_path", p)}
                        onSeed={(v) => setPath("about.seed", v)} onToast={showToast} />
+          <div style={{ marginTop: 14 }}>
+            <FocalPointPicker
+              label="Studio photo position in frame"
+              image_path={s.about.image_path} seed={s.about.seed}
+              x={s.about.focal_x ?? 50} y={s.about.focal_y ?? 50}
+              onChange={(fx, fy) => mut((n) => { n.about.focal_x = fx; n.about.focal_y = fy; })}
+            />
+          </div>
         </div>
       </div>
 

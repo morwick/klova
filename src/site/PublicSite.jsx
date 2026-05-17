@@ -73,7 +73,8 @@ function Hero({ hero, count, catCount, onStart }) {
       </div>
 
       <div className="hero-image-wrap">
-        <img className="hero-image" src={imageUrl(hero, 1400, 1800)} alt="featured" />
+        <img className="hero-image" src={imageUrl(hero, 1400, 1800)} alt="featured"
+             style={{ objectPosition: `${hero.focal_x ?? 50}% ${hero.focal_y ?? 50}%` }} />
         <div className="hero-image-meta">
           <span>{hero.featuredCaption}</span>
           <span className="hero-image-tag">{hero.featuredTag}</span>
@@ -135,7 +136,10 @@ function Tile({ work, index, layout, showCorner, onOpen }) {
         loading="lazy"
         src={imageUrl(work, isEditorial ? work.width : 900, isEditorial ? work.height : 1125)}
         alt={work.title}
-        style={isEditorial ? { width: "100%", height: "auto" } : undefined}
+        style={{
+          objectPosition: `${work.focal_x ?? 50}% ${work.focal_y ?? 50}%`,
+          ...(isEditorial ? { width: "100%", height: "auto" } : {}),
+        }}
       />
       {showCorner && <span className="tile-corner">№ {fmt2(index + 1)}</span>}
       <span className="tile-overlay" />
@@ -190,7 +194,8 @@ function About({ about }) {
           </div>
         </div>
         <figure className="about-figure">
-          <img src={imageUrl(about, 1200, 1500)} alt="studio" />
+          <img src={imageUrl(about, 1200, 1500)} alt="studio"
+               style={{ objectPosition: `${about.focal_x ?? 50}% ${about.focal_y ?? 50}%` }} />
         </figure>
       </div>
     </>

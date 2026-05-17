@@ -1,12 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase, imageUrl } from "../../lib/supabase.js";
-import { useToast, Text, Select, Toggle, ImagePicker } from "../ui.jsx";
+import { useToast, Text, Select, Toggle, ImagePicker, FocalPointPicker } from "../ui.jsx";
 
 const BLANK = {
   title: "", location: "", year: String(new Date().getFullYear()),
   category_id: "", seed: "", image_path: "",
-  width: 1200, height: 1500, sort_order: 0, published: true,
+  width: 1200, height: 1500, focal_x: 50, focal_y: 50,
+  sort_order: 0, published: true,
 };
+
+const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(+n) ? Math.round(+n) : 50));
 
 export default function Works() {
   const [toast, showToast] = useToast();
@@ -45,6 +48,8 @@ export default function Works() {
       image_path: editing.image_path || null,
       width: Number(editing.width) || 1200,
       height: Number(editing.height) || 1500,
+      focal_x: clampPct(editing.focal_x),
+      focal_y: clampPct(editing.focal_y),
       sort_order: Number(editing.sort_order) || 0,
       published: !!editing.published,
     };
@@ -95,7 +100,8 @@ export default function Works() {
                 {rows.map((r) => (
                   <tr key={r.id}>
                     <td style={{ width: 70 }}>
-                      <img className="thumb" alt="" src={imageUrl(r, 120, 150)} />
+                      <img className="thumb" alt="" src={imageUrl(r, 120, 150)}
+                           style={{ objectPosition: `${r.focal_x ?? 50}% ${r.focal_y ?? 50}%` }} />
                     </td>
                     <td>{r.title}<div className="help">{r.location}</div></td>
                     <td>{cats.find((c) => c.id === r.category_id)?.label || r.category_slug || "—"}</td>
@@ -153,6 +159,14 @@ export default function Works() {
             <Text label="Height (px)" type="number" value={editing.height}
                   onChange={(v) => set("height", v)} />
           </div>
+          <FocalPointPicker
+            label="Photo position in frame"
+            image_path={editing.image_path}
+            seed={editing.seed}
+            x={editing.focal_x ?? 50}
+            y={editing.focal_y ?? 50}
+            onChange={(fx, fy) => setEditing((e) => ({ ...e, focal_x: fx, focal_y: fy }))}
+          />
           <Toggle label="Published (visible on the public site)"
                   value={editing.published} onChange={(v) => set("published", v)} />
           <div className="btn-row" style={{ marginTop: 14 }}>
