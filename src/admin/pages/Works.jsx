@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase, imageUrl } from "../../lib/supabase.js";
 import { useToast, Text, Select, Toggle, ImagePicker, FocalPointPicker } from "../ui.jsx";
 
@@ -17,6 +17,7 @@ export default function Works() {
   const [cats, setCats] = useState([]);
   const [editing, setEditing] = useState(null); // work object or null
   const [saving, setSaving] = useState(false);
+  const [view, setView] = useState("list"); // "list" | "collage"
 
   const load = useCallback(async () => {
     const [w, c] = await Promise.all([
@@ -77,6 +78,37 @@ export default function Works() {
     else load();
   }
 
+  // Persist a new ordering. `nextOrder` is the new array of works in display
+  // order. Only items whose sort_order changed are written, and we reuse the
+  // sort_order *slots* of the items in the input list — so reordering within
+  // a filtered subset never disturbs items outside the filter.
+  const persistOrder = useCallback(async (nextOrder, prevOrder) => {
+    const slots = prevOrder.map((w) => w.sort_order ?? 0);
+    const updates = [];
+    const optimistic = new Map();
+    nextOrder.forEach((w, i) => {
+      const slot = slots[i];
+      if (w.sort_order !== slot) {
+        updates.push({ id: w.id, sort_order: slot });
+        optimistic.set(w.id, slot);
+      }
+    });
+    if (!updates.length) return;
+    setRows((prev) =>
+      prev.map((r) => (optimistic.has(r.id) ? { ...r, sort_order: optimistic.get(r.id) } : r))
+    );
+    const results = await Promise.all(
+      updates.map((u) => supabase.from("works").update({ sort_order: u.sort_order }).eq("id", u.id))
+    );
+    const failed = results.find((r) => r.error);
+    if (failed) {
+      showToast(failed.error.message, true);
+      load();
+    } else {
+      showToast("Order saved");
+    }
+  }, [load, showToast]);
+
   const set = (k, v) => setEditing((e) => ({ ...e, [k]: v }));
 
   return (
@@ -88,9 +120,15 @@ export default function Works() {
 
       {!editing && (
         <>
-          <div className="btn-row" style={{ marginBottom: 18 }}>
+          <div className="btn-row" style={{ marginBottom: 18, justifyContent: "space-between" }}>
             <button className="btn" onClick={startNew}>+ New work</button>
+            <div className="view-toggle" role="tablist">
+              <button data-active={view === "list"} onClick={() => setView("list")}>List</button>
+              <button data-active={view === "collage"} onClick={() => setView("collage")}>Smart collage</button>
+            </div>
           </div>
+
+          {view === "list" && (
           <div className="card">
             <table className="table">
               <thead>
@@ -127,6 +165,11 @@ export default function Works() {
               </tbody>
             </table>
           </div>
+          )}
+
+          {view === "collage" && (
+            <SmartCollage rows={rows} cats={cats} onReorder={persistOrder} onEdit={setEditing} />
+          )}
         </>
       )}
 
@@ -179,5 +222,170 @@ export default function Works() {
       )}
       {toast}
     </>
+  );
+}
+
+// Drag-and-drop "smart collage" editor. Renders the same masonry layout the
+// public site uses (CSS columns), with a category filter and HTML5 drag-and-
+// drop reordering. Items are reordered visually on drop and the new sort_order
+// values are pushed to Supabase.
+function SmartCollage({ rows, cats, onReorder, onEdit }) {
+  const [cat, setCat] = useState("all");
+  const [dragId, setDragId] = useState(null);
+  // Live preview order while dragging — array of work IDs in their current
+  // (possibly shuffled) display order. null when not dragging.
+  const [previewIds, setPreviewIds] = useState(null);
+  const lastShuffle = useRef(0);
+
+  const sorted = useMemo(
+    () => [...rows].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    [rows]
+  );
+
+  const filtered = useMemo(
+    () => (cat === "all" ? sorted : sorted.filter((w) => w.category_slug === cat || w.category_id === cat)),
+    [sorted, cat]
+  );
+
+  const filterCats = useMemo(
+    () => [{ id: "all", label: "All" }, ...cats.map((c) => ({ id: c.slug, label: c.label }))],
+    [cats]
+  );
+
+  const counts = useMemo(() => {
+    const c = { all: sorted.length };
+    sorted.forEach((w) => { if (w.category_slug) c[w.category_slug] = (c[w.category_slug] ?? 0) + 1; });
+    return c;
+  }, [sorted]);
+
+  // What we actually render: filtered list re-arranged to match previewIds
+  // while a drag is in flight. Falls back to filtered when idle.
+  const displayList = useMemo(() => {
+    if (!previewIds) return filtered;
+    const byId = new Map(filtered.map((w) => [w.id, w]));
+    const out = [];
+    previewIds.forEach((id) => { if (byId.has(id)) { out.push(byId.get(id)); byId.delete(id); } });
+    byId.forEach((w) => out.push(w)); // any new items not in preview yet
+    return out;
+  }, [filtered, previewIds]);
+
+  function onDragStart(e, id) {
+    setDragId(id);
+    setPreviewIds(filtered.map((w) => w.id));
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", String(id)); } catch (_) {}
+    // Hide the default ghost so it doesn't double-render over the live shift.
+    if (e.dataTransfer.setDragImage) {
+      const ghost = document.createElement("div");
+      ghost.style.cssText = "position:fixed;top:-1000px;width:1px;height:1px;";
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, 0, 0);
+      setTimeout(() => ghost.remove(), 0);
+    }
+  }
+
+  function shuffleTo(targetId) {
+    if (!dragId || targetId === dragId) return;
+    const now = performance.now();
+    if (now - lastShuffle.current < 40) return;
+    lastShuffle.current = now;
+    setPreviewIds((prev) => {
+      const ids = prev || filtered.map((w) => w.id);
+      const src = ids.indexOf(dragId);
+      const dst = ids.indexOf(targetId);
+      if (src < 0 || dst < 0 || src === dst) return ids;
+      const next = ids.slice();
+      const [moved] = next.splice(src, 1);
+      next.splice(dst, 0, moved);
+      return next;
+    });
+  }
+
+  function onDragOver(e, id) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    shuffleTo(id);
+  }
+
+  function commitDrop(e) {
+    if (e) e.preventDefault();
+    const ids = previewIds;
+    setDragId(null);
+    setPreviewIds(null);
+    if (!ids) return;
+    const byId = new Map(filtered.map((w) => [w.id, w]));
+    const next = ids.map((id) => byId.get(id)).filter(Boolean);
+    // No-op if nothing actually moved.
+    const same = next.length === filtered.length && next.every((w, i) => w.id === filtered[i].id);
+    if (same) return;
+    onReorder(next, filtered);
+  }
+
+  function onDragEnd() {
+    // Fires after a successful drop too, but commitDrop has already cleared
+    // state then — these become no-ops.
+    setDragId(null);
+    setPreviewIds(null);
+  }
+
+  return (
+    <div className="card collage-card">
+      <div className="collage-bar">
+        <div className="chips">
+          {filterCats.map((c) => (
+            <button key={c.id} type="button" className="chip"
+                    data-active={c.id === cat} onClick={() => setCat(c.id)}>
+              {c.label}
+              <span className="chip-count">({String(counts[c.id] ?? 0).padStart(2, "0")})</span>
+            </button>
+          ))}
+        </div>
+        <p className="help" style={{ margin: 0 }}>
+          Drag a photo — the others shift live as you pass over them. Drop to save.
+        </p>
+      </div>
+
+      {!filtered.length ? (
+        <div className="empty" style={{ padding: 28 }}>No works in this filter yet.</div>
+      ) : (
+        <div
+          className={`collage-grid${dragId ? " is-dragging-active" : ""}`}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={commitDrop}
+        >
+          {displayList.map((w, i) => {
+            const isDragging = dragId === w.id;
+            return (
+              <figure
+                key={w.id}
+                className={`collage-tile${isDragging ? " is-dragging" : ""}`}
+                draggable
+                onDragStart={(e) => onDragStart(e, w.id)}
+                onDragOver={(e) => onDragOver(e, w.id)}
+                onDragEnter={() => shuffleTo(w.id)}
+                onDragEnd={onDragEnd}
+                onDrop={commitDrop}
+              >
+                <img
+                  src={imageUrl(w, 600, Math.round(600 * (w.height || 1500) / (w.width || 1200)))}
+                  alt={w.title}
+                  draggable={false}
+                  style={{ objectPosition: `${w.focal_x ?? 50}% ${w.focal_y ?? 50}%` }}
+                />
+                <figcaption>
+                  <span className="collage-pos">№ {String(i + 1).padStart(2, "0")}</span>
+                  <span className="collage-title">{w.title}</span>
+                  <span className="collage-meta">
+                    {(w.category_slug || "—")} · #{w.sort_order ?? 0}
+                  </span>
+                  <button type="button" className="btn ghost collage-edit"
+                          onClick={() => onEdit(w)}>Edit</button>
+                </figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

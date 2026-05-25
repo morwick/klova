@@ -195,3 +195,90 @@
   .admin-main { padding: 24px 20px 60px; }
   .row, .row-3, .dash-grid { grid-template-columns: 1fr; }
 }
+
+/* view toggle (List / Smart collage) */
+.view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.view-toggle button {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--mute);
+  background: transparent; border: 0; padding: 8px 16px; cursor: pointer;
+}
+.view-toggle button[data-active="true"] { background: var(--ink); color: var(--paper); }
+
+/* smart collage editor */
+.collage-card { padding: 18px; }
+.collage-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.collage-bar .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.collage-bar .chip {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink);
+  background: transparent; border: 1px solid var(--line);
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+}
+.collage-bar .chip[data-active="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.collage-bar .chip-count { margin-left: 6px; opacity: 0.6; }
+
+.collage-grid {
+  column-count: 3;
+  column-gap: 14px;
+}
+@media (max-width: 1100px) { .collage-grid { column-count: 2; } }
+@media (max-width: 640px)  { .collage-grid { column-count: 1; } }
+
+.collage-tile {
+  position: relative;
+  break-inside: avoid;
+  margin: 0 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px; overflow: hidden;
+  background: var(--paper-2);
+  cursor: grab;
+  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+.collage-tile:active { cursor: grabbing; }
+.collage-tile img {
+  display: block; width: 100%; height: auto;
+  object-fit: cover; filter: var(--img-filter);
+  user-select: none; -webkit-user-drag: none;
+}
+.collage-tile figcaption {
+  position: absolute; inset: auto 0 0 0;
+  padding: 10px 12px 12px;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px;
+  align-items: center;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.72));
+  color: #fff;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0; transition: opacity 180ms ease;
+}
+.collage-tile:hover figcaption,
+.collage-tile.is-dragging figcaption { opacity: 1; }
+.collage-pos { font-weight: 600; }
+.collage-title { font-family: var(--serif); font-style: italic; font-size: 13px; text-transform: none; letter-spacing: 0; }
+.collage-meta { grid-column: 1 / -1; color: rgba(255,255,255,0.7); font-size: 9px; }
+.collage-edit {
+  grid-column: 3 / 4; grid-row: 1 / 2;
+  padding: 4px 10px !important; font-size: 9px !important;
+  background: rgba(255,255,255,0.92) !important; color: var(--ink) !important;
+  border-color: rgba(255,255,255,0.92) !important;
+}
+
+/* Live-shift animation: when other tiles move to make room for the dragged
+   item, the masonry reflows. We can't FLIP-animate the column reflow itself,
+   but a soft fade + lift on the moving tiles makes the shuffle read clearly. */
+.collage-grid.is-dragging-active .collage-tile {
+  transition: transform 220ms cubic-bezier(.2,.7,.2,1), opacity 160ms ease, box-shadow 160ms ease;
+}
+.collage-tile.is-dragging {
+  opacity: 0.35;
+  transform: scale(0.96);
+  box-shadow: 0 0 0 2px var(--ink) inset;
+}
+.collage-grid.is-dragging-active .collage-tile:not(.is-dragging):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+}

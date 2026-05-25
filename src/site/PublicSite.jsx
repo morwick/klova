@@ -55,19 +55,8 @@ function Hero({ hero, count, catCount, onStart }) {
             <span className="hero-cta-arrow" />
           </button>
 
-          <div className="hero-meta">
-            <div className="hero-meta-cell">
-              <span className="hero-meta-k">{hero.metaWorksLabel}</span>
-              <span className="hero-meta-v">{fmt2(count)}</span>
-            </div>
-            <div className="hero-meta-cell">
-              <span className="hero-meta-k">{hero.metaCategoriesLabel}</span>
-              <span className="hero-meta-v">{fmt2(catCount)}</span>
-            </div>
-            <div className="hero-meta-cell">
-              <span className="hero-meta-k">{hero.metaSinceLabel}</span>
-              <span className="hero-meta-v">{hero.metaSinceValue}</span>
-            </div>
+          <div className="hero-meta hero-meta--year">
+            <span className="hero-meta-year">2026</span>
           </div>
         </div>
       </div>

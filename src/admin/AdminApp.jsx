@@ -7,6 +7,7 @@ import Categories from "./pages/Categories.jsx";
 import Services from "./pages/Services.jsx";
 import Content from "./pages/Content.jsx";
 import Theme from "./pages/Theme.jsx";
+import { useSiteData, useThemeVars } from "../lib/useSiteData.js";
 import "../styles/admin.css";
 
 function Sidebar({ onSignOut }) {
@@ -35,6 +36,11 @@ function Sidebar({ onSignOut }) {
 
 export default function AdminApp() {
   const { session, loading, signIn, signOut } = useAuth();
+  // Mirror the public site's theme inside the admin so photo previews
+  // (thumbs, focal-point picker, smart-collage tiles) use the same colour /
+  // grayscale treatment the visitor sees.
+  const { settings } = useSiteData();
+  useThemeVars(settings.theme);
 
   if (loading) return <div className="admin-center">Loading…</div>;
   if (!session) return <Login onSignIn={signIn} />;
