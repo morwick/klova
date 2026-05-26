@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase, imageUrl } from "../../lib/supabase.js";
-import { useToast, Text, Select, Toggle, ImagePicker, FocalPointPicker } from "../ui.jsx";
+import { useToast, Text, Select, Toggle, ImagePicker, VideoPicker, FocalPointPicker } from "../ui.jsx";
 
 const BLANK = {
   title: "", location: "", year: String(new Date().getFullYear()),
-  category_id: "", seed: "", image_path: "",
+  category_id: "", seed: "", image_path: "", video_path: "",
   width: 1200, height: 1500, focal_x: 50, focal_y: 50,
   sort_order: 0, published: true,
 };
@@ -47,6 +47,7 @@ export default function Works() {
       category_slug: cat?.slug || null,
       seed: editing.seed || null,
       image_path: editing.image_path || null,
+      video_path: editing.video_path || null,
       width: Number(editing.width) || 1200,
       height: Number(editing.height) || 1500,
       focal_x: clampPct(editing.focal_x),
@@ -177,11 +178,17 @@ export default function Works() {
         <div className="card">
           <h3>{editing.id ? "Edit work" : "New work"}</h3>
           <ImagePicker
-            label="Photo"
+            label="Photo (also used as the video poster when a video is uploaded)"
             value={editing.image_path}
             seed={editing.seed}
             onPath={(p) => set("image_path", p)}
             onSeed={(s) => set("seed", s)}
+            onToast={showToast}
+          />
+          <VideoPicker
+            label="Video (optional — plays auto-muted on the site)"
+            value={editing.video_path}
+            onPath={(p) => set("video_path", p)}
             onToast={showToast}
           />
           <div className="row">

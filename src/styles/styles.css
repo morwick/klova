@@ -486,6 +486,8 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--ink-2);
   max-width: 36ch;
 }
+.about-body p { margin: 0 0 var(--about-p-gap, 1em); }
+.about-body p:last-child { margin-bottom: 0; }
 .about-body em { font-style: italic; }
 .about-figure {
   position: relative; overflow: hidden;

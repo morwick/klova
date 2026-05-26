@@ -1,5 +1,5 @@
 import { useSettings } from "../useSettings.js";
-import { useToast, Text, Area, Toggle, StringList, ImagePicker, FocalPointPicker } from "../ui.jsx";
+import { useToast, Text, Area, Select, Toggle, StringList, ImagePicker, FocalPointPicker } from "../ui.jsx";
 
 export default function Content() {
   const { settings, setPath, setSettings, save, saving } = useSettings();
@@ -114,8 +114,29 @@ export default function Content() {
           <Text label="Title (italic)" value={s.about.titleEm} onChange={(v) => setPath("about.titleEm", v)} />
           <Text label="Title tail" value={s.about.titleTail} onChange={(v) => setPath("about.titleTail", v)} />
         </div>
-        <Area label="Body (HTML allowed: <em>…</em>)" rows={4}
+        <Area label="Body (HTML allowed: <em>…</em>. Use a blank line or <p>…</p> for new paragraphs.)" rows={6}
               value={s.about.body} onChange={(v) => setPath("about.body", v)} />
+        <div className="row-3">
+          <Select
+            label="Text alignment"
+            value={s.about.bodyAlign ?? "left"}
+            onChange={(v) => setPath("about.bodyAlign", v)}
+            options={[
+              { value: "left",    label: "Align left" },
+              { value: "right",   label: "Align right" },
+              { value: "center",  label: "Center" },
+              { value: "justify", label: "Justify" },
+            ]}
+          />
+          <Text label="Line spacing (line-height)" type="number"
+                value={s.about.bodyLineHeight ?? 1.4}
+                onChange={(v) => setPath("about.bodyLineHeight", v === "" ? "" : Number(v))}
+                help="Unitless multiplier — e.g. 1.2 tight, 1.4 normal, 1.8 airy" />
+          <Text label="Paragraph spacing (em)" type="number"
+                value={s.about.bodyParagraphSpacing ?? 1}
+                onChange={(v) => setPath("about.bodyParagraphSpacing", v === "" ? "" : Number(v))}
+                help="Gap between paragraphs in em — 0 for none, 1 for one line" />
+        </div>
         <label className="help">Stats</label>
         {s.about.stats.map((st, i) => (
           <div className="row" key={i}>

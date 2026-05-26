@@ -22,6 +22,7 @@ create table if not exists works (
   location      text,
   year          text,
   image_path    text,                       -- path inside the 'works' storage bucket
+  video_path    text,                       -- optional video file path; when set, work renders as video
   seed          text,                       -- picsum fallback seed (before upload)
   width         int  default 1200,
   height        int  default 1500,
@@ -37,6 +38,7 @@ create index if not exists works_sort_idx on works (sort_order);
 -- backfill columns on databases created before the focal-point feature
 alter table works add column if not exists focal_x int default 50;
 alter table works add column if not exists focal_y int default 50;
+alter table works add column if not exists video_path text;
 
 create table if not exists services (
   id          uuid primary key default gen_random_uuid(),

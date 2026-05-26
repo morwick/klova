@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from "react";
-import { supabase, STORAGE_BUCKET, imageUrl } from "../lib/supabase.js";
+import { supabase, STORAGE_BUCKET, imageUrl, storageUrl } from "../lib/supabase.js";
+
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB soft cap
 
 // ─── toast ──────────────────────────────────────────
 export function useToast() {
@@ -133,6 +135,68 @@ export function ImagePicker({ label, value, seed, onPath, onSeed, onToast }) {
           {!value && onSeed && (
             <input style={{ marginTop: 6 }} value={seed ?? ""}
                    onChange={(e) => onSeed(e.target.value)} placeholder="picsum seed" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── video upload ───────────────────────────────────
+// Optional video for a Work. When set, the public site renders the work as
+// an autoplaying/muted/looping <video> instead of a static photo. The
+// existing image_path (or seed fallback) is still used as poster/thumbnail.
+export function VideoPicker({ label, value, onPath, onToast }) {
+  const inputRef = useRef();
+  const [busy, setBusy] = useState(false);
+
+  async function pick(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_VIDEO_BYTES) {
+      onToast?.(`Video is too large (${(file.size / 1024 / 1024).toFixed(1)} MB) — keep it under 100 MB`, true);
+      e.target.value = "";
+      return;
+    }
+    setBusy(true);
+    try {
+      const path = await uploadImage(file, "videos");
+      onPath(path);
+      onToast?.("Video uploaded");
+    } catch (err) {
+      onToast?.("Upload failed: " + (err.message || err), true);
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  const src = storageUrl(value);
+
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <div className="btn-row" style={{ alignItems: "flex-start" }}>
+        {src ? (
+          <video className="thumb" src={src} muted autoPlay loop playsInline
+                 style={{ objectFit: "cover", background: "#000" }} />
+        ) : (
+          <div className="thumb" style={{
+            display: "grid", placeItems: "center", fontSize: 10,
+            color: "var(--mute)", background: "var(--paper)",
+          }}>No video</div>
+        )}
+        <div style={{ flex: 1 }}>
+          <input ref={inputRef} type="file" accept="video/*" onChange={pick} disabled={busy} />
+          <p className="help">
+            {busy ? "Uploading…" : value
+              ? `Stored: ${value}`
+              : "Optional — leave empty to keep this work as a photo. MP4/WebM recommended, < 100 MB."}
+          </p>
+          {value && (
+            <button type="button" className="btn ghost" onClick={() => onPath("")}>
+              Remove video
+            </button>
           )}
         </div>
       </div>

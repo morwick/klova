@@ -5,9 +5,20 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useSiteData, useThemeVars } from "../lib/useSiteData.js";
-import { imageUrl } from "../lib/supabase.js";
+import { imageUrl, storageUrl } from "../lib/supabase.js";
 
 const fmt2 = (n) => String(n).padStart(2, "0");
+
+// Render the About body as multiple paragraphs. If the admin wrote raw <p>
+// tags, trust them; otherwise split on blank lines so the paragraph-spacing
+// setting has something to apply to.
+function aboutBodyHtml(body) {
+  const s = String(body ?? "");
+  if (/<p[\s>]/i.test(s)) return s;
+  const blocks = s.split(/\n\s*\n+/).map((b) => b.trim()).filter(Boolean);
+  if (!blocks.length) return "";
+  return blocks.map((b) => `<p>${b.replace(/\n/g, "<br/>")}</p>`).join("");
+}
 
 // ─── nav ────────────────────────────────────────────
 function TopNav({ nav, onWork, onInquire }) {
@@ -117,19 +128,33 @@ function FilterBar({ categories, cat, setCat, layout, setLayout, total, counts }
 
 function Tile({ work, index, layout, showCorner, onOpen }) {
   const isEditorial = layout === "editorial";
+  const posterW = isEditorial ? work.width : 900;
+  const posterH = isEditorial ? work.height : 1125;
+  const poster = imageUrl(work, posterW, posterH);
+  const objectStyle = {
+    objectPosition: `${work.focal_x ?? 50}% ${work.focal_y ?? 50}%`,
+    ...(isEditorial ? { width: "100%", height: "auto" } : {}),
+  };
   return (
     <figure className="tile" onClick={() => onOpen(work)} role="button" tabIndex={0}
             onKeyDown={(e) => { if (e.key === "Enter") onOpen(work); }}>
-      <img
-        className="tile-img"
-        loading="lazy"
-        src={imageUrl(work, isEditorial ? work.width : 900, isEditorial ? work.height : 1125)}
-        alt={work.title}
-        style={{
-          objectPosition: `${work.focal_x ?? 50}% ${work.focal_y ?? 50}%`,
-          ...(isEditorial ? { width: "100%", height: "auto" } : {}),
-        }}
-      />
+      {work.video_path ? (
+        <video
+          className="tile-img"
+          src={storageUrl(work.video_path)}
+          poster={poster}
+          autoPlay muted loop playsInline preload="metadata"
+          style={objectStyle}
+        />
+      ) : (
+        <img
+          className="tile-img"
+          loading="lazy"
+          src={poster}
+          alt={work.title}
+          style={objectStyle}
+        />
+      )}
       {showCorner && <span className="tile-corner">№ {fmt2(index + 1)}</span>}
       <span className="tile-overlay" />
       <figcaption className="tile-meta">
@@ -172,7 +197,15 @@ function About({ about }) {
       </header>
       <div className="about">
         <div>
-          <p className="about-body" dangerouslySetInnerHTML={{ __html: about.body }} />
+          <div
+            className="about-body"
+            style={{
+              textAlign: about.bodyAlign || "left",
+              lineHeight: about.bodyLineHeight ?? 1.4,
+              "--about-p-gap": `${about.bodyParagraphSpacing ?? 1}em`,
+            }}
+            dangerouslySetInnerHTML={{ __html: aboutBodyHtml(about.body) }}
+          />
           <div className="about-stats">
             {about.stats.map((s, i) => (
               <div key={i}>
@@ -248,7 +281,16 @@ function Lightbox({ work, items, onClose, onPrev, onNext, index, lb }) {
   return (
     <div className="lb" onClick={onClose}>
       <div className="lb-main" onClick={(e) => e.stopPropagation()}>
-        <img className="lb-img" src={imageUrl(work, 1600, ratioH)} alt={work.title} />
+        {work.video_path ? (
+          <video
+            className="lb-img"
+            src={storageUrl(work.video_path)}
+            poster={imageUrl(work, 1600, ratioH)}
+            autoPlay loop playsInline controls
+          />
+        ) : (
+          <img className="lb-img" src={imageUrl(work, 1600, ratioH)} alt={work.title} />
+        )}
         <span className="lb-counter">{fmt2(index + 1)} / {fmt2(items.length)}</span>
         <div className="lb-nav">
           <button className="lb-btn" onClick={onPrev} aria-label="prev">←</button>

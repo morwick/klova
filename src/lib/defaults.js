@@ -97,6 +97,9 @@ export const DEFAULT_SETTINGS = {
     titleTail: " pictures.",
     aside: "Bali — Jakarta — Singapore",
     body: "klova was founded in 2019 by Naia Pradipta and Reza Ardian — a two-photographer studio working primarily in <em>black and white</em>. We work slowly, on film and digital, and we believe in pictures that survive the algorithm: prints, books, archives.",
+    bodyAlign: "left",          // left | right | center | justify
+    bodyLineHeight: 1.4,        // CSS line-height (unitless)
+    bodyParagraphSpacing: 1,    // em — gap between paragraphs
     stats: [
       { k: "Weddings shot", v: "218" },
       { k: "Editorial credits", v: "47" },

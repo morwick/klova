@@ -26,3 +26,10 @@ export function imageUrl({ image_path, seed }, w = 1200, h = 1500) {
   const s = seed || "klova";
   return `https://picsum.photos/seed/${encodeURIComponent(s)}/${w}/${h}`;
 }
+
+// Public URL for any stored asset (e.g. video files).
+export function storageUrl(path) {
+  if (!path) return "";
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  return data?.publicUrl || "";
+}
