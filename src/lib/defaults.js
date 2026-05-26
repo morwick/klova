@@ -131,7 +131,7 @@ export const DEFAULT_SETTINGS = {
         { type: "link", label: "Journal", href: "#" },
       ]},
     ],
-    bottom: ["© MMXXVI klova studio", "Vol. 07 / 124 works", "Made in Bali"],
+    bottom: ["Vol. 07 / 124 works", "Made in Bali"],
   },
   lightbox: {
     body: "Frame from the {cat} archive. Shot on a mix of 35mm film and digital medium-format, lightly toned and printed for our standard archival series.",
@@ -176,7 +176,11 @@ export const FONT_FAMILIES = {
 
 // Deep-merge persisted settings over defaults so missing/added keys never break.
 export function mergeSettings(saved) {
-  return deepMerge(structuredClone(DEFAULT_SETTINGS), saved || {});
+  const merged = deepMerge(structuredClone(DEFAULT_SETTINGS), saved || {});
+  if (merged.footer?.bottom?.length > 2) {
+    merged.footer.bottom = merged.footer.bottom.slice(-2);
+  }
+  return merged;
 }
 function deepMerge(base, over) {
   if (Array.isArray(over)) return over;

@@ -263,6 +263,7 @@ function Foot({ footer }) {
         </div>
       ))}
       <div className="foot-bottom">
+        <a href="https://www.instagram.com/stdrzk.id/" target="_blank" rel="noopener noreferrer">© 2026 RZK.id</a>
         {footer.bottom.map((b, i) => <span key={i}>{b}</span>)}
       </div>
     </footer>

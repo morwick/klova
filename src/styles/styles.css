@@ -611,6 +611,8 @@ button { font-family: inherit; cursor: pointer; }
   text-transform: uppercase;
   opacity: 0.55;
 }
+.foot-bottom a { color: inherit; text-decoration: none; }
+.foot-bottom a:hover { text-decoration: underline; text-underline-offset: 4px; }
 
 /* ───── lightbox ───── */
 .lb {
