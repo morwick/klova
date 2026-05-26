@@ -11,6 +11,32 @@ const BLANK = {
 
 const clampPct = (n) => Math.min(100, Math.max(0, Number.isFinite(+n) ? Math.round(+n) : 50));
 
+// Named aspect presets. "custom" leaves width/height as-is so admins can
+// type their own numbers. The dropdown auto-selects the closest preset
+// based on the work's current width/height (or "custom" when nothing matches).
+const ASPECT_PRESETS = [
+  { value: "16:9", label: "16:9 — Landscape",  w: 1920, h: 1080 },
+  { value: "9:16", label: "9:16 — Portrait",   w: 1080, h: 1920 },
+  { value: "4:5",  label: "4:5 — Vertical",    w: 1200, h: 1500 },
+  { value: "1:1",  label: "1:1 — Square",      w: 1500, h: 1500 },
+  { value: "3:2",  label: "3:2 — Classic",     w: 1500, h: 1000 },
+  { value: "custom", label: "Custom (use width/height below)", w: 0, h: 0 },
+];
+
+function aspectKeyFor(w, h) {
+  const W = Number(w) || 0, H = Number(h) || 0;
+  if (!W || !H) return "custom";
+  const r = W / H;
+  let best = "custom", diff = 0.04; // within ~4% counts as the named ratio
+  for (const p of ASPECT_PRESETS) {
+    if (p.value === "custom") continue;
+    const pr = p.w / p.h;
+    const d = Math.abs(r - pr) / pr;
+    if (d < diff) { diff = d; best = p.value; }
+  }
+  return best;
+}
+
 export default function Works() {
   const [toast, showToast] = useToast();
   const [rows, setRows] = useState([]);
@@ -189,8 +215,32 @@ export default function Works() {
             label="Video (optional — plays auto-muted on the site)"
             value={editing.video_path}
             onPath={(p) => set("video_path", p)}
+            onSize={(w, h) => setEditing((e) => ({ ...e, width: w, height: h }))}
             onToast={showToast}
           />
+          <div className="row">
+            <Select
+              label="Aspect ratio"
+              value={aspectKeyFor(editing.width, editing.height)}
+              onChange={(v) => {
+                const p = ASPECT_PRESETS.find((x) => x.value === v);
+                if (!p || p.value === "custom") return;
+                setEditing((e) => ({ ...e, width: p.w, height: p.h }));
+              }}
+              options={ASPECT_PRESETS.map((p) => ({ value: p.value, label: p.label }))}
+            />
+            <div className="field">
+              <label>Current ratio</label>
+              <input
+                value={editing.width && editing.height
+                  ? `${editing.width} × ${editing.height} px (${(editing.width / editing.height).toFixed(2)} : 1)`
+                  : "—"}
+                readOnly
+                style={{ background: "var(--paper)" }}
+              />
+              <p className="help">Auto-detected from the uploaded video, or set by the dropdown.</p>
+            </div>
+          </div>
           <div className="row">
             <Text label="Title" value={editing.title} onChange={(v) => set("title", v)} />
             <Text label="Location" value={editing.location} onChange={(v) => set("location", v)} />

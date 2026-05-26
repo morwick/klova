@@ -146,7 +146,26 @@ export function ImagePicker({ label, value, seed, onPath, onSeed, onToast }) {
 // Optional video for a Work. When set, the public site renders the work as
 // an autoplaying/muted/looping <video> instead of a static photo. The
 // existing image_path (or seed fallback) is still used as poster/thumbnail.
-export function VideoPicker({ label, value, onPath, onToast }) {
+// onSize(width, height) fires once the video's intrinsic dimensions are read
+// from metadata, so the caller can sync work.width / work.height to it.
+function readVideoDimensions(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.onloadedmetadata = () => {
+      const w = v.videoWidth, h = v.videoHeight;
+      URL.revokeObjectURL(url);
+      if (!w || !h) reject(new Error("Couldn't read video dimensions"));
+      else resolve({ width: w, height: h });
+    };
+    v.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Couldn't read video metadata")); };
+    v.src = url;
+  });
+}
+
+export function VideoPicker({ label, value, onPath, onSize, onToast }) {
   const inputRef = useRef();
   const [busy, setBusy] = useState(false);
 
@@ -159,10 +178,15 @@ export function VideoPicker({ label, value, onPath, onToast }) {
       return;
     }
     setBusy(true);
+    let dims = null;
     try {
+      try { dims = await readVideoDimensions(file); } catch (_) { /* non-fatal */ }
       const path = await uploadImage(file, "videos");
       onPath(path);
-      onToast?.("Video uploaded");
+      if (dims) onSize?.(dims.width, dims.height);
+      onToast?.(dims
+        ? `Video uploaded — ${dims.width}×${dims.height} detected`
+        : "Video uploaded");
     } catch (err) {
       onToast?.("Upload failed: " + (err.message || err), true);
     } finally {

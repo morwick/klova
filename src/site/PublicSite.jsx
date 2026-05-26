@@ -144,7 +144,12 @@ function Tile({ work, index, layout, showCorner, onOpen }) {
           src={storageUrl(work.video_path)}
           poster={poster}
           autoPlay muted loop playsInline preload="metadata"
-          style={objectStyle}
+          style={{
+            ...objectStyle,
+            ...(isEditorial && work.width && work.height
+              ? { aspectRatio: `${work.width} / ${work.height}` }
+              : {}),
+          }}
         />
       ) : (
         <img
