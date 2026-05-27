@@ -33,3 +33,12 @@ export function storageUrl(path) {
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return data?.publicUrl || "";
 }
+
+// Delete a file from the storage bucket. Silently ignores errors so a missing
+// or already-deleted file doesn't break the calling replace/remove flow.
+export async function deleteStorageFile(path) {
+  if (!path) return;
+  try {
+    await supabase.storage.from(STORAGE_BUCKET).remove([path]);
+  } catch (_) { /* non-fatal */ }
+}

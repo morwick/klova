@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { supabase, STORAGE_BUCKET, imageUrl, storageUrl } from "../lib/supabase.js";
+import { supabase, STORAGE_BUCKET, imageUrl, storageUrl, deleteStorageFile } from "../lib/supabase.js";
 
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024; // 100 MB soft cap
 
@@ -99,6 +99,9 @@ export function uploadImage(file, prefix = "content") {
 
 // Image picker: shows current image, lets you upload a new file or clear it.
 // Falls back to a picsum seed (kept editable) when no file is uploaded.
+// Picking a new file while one is already stored deletes the old file from
+// storage, so "replace" actually frees the previous asset instead of
+// orphaning it. Same for the explicit Remove button.
 export function ImagePicker({ label, value, seed, onPath, onSeed, onToast }) {
   const inputRef = useRef();
   const [busy, setBusy] = useState(false);
@@ -107,15 +110,26 @@ export function ImagePicker({ label, value, seed, onPath, onSeed, onToast }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setBusy(true);
+    const oldPath = value;
     try {
       const path = await uploadImage(file);
       onPath(path);
-      onToast?.("Image uploaded");
+      if (oldPath && oldPath !== path) await deleteStorageFile(oldPath);
+      onToast?.(oldPath ? "Image replaced" : "Image uploaded");
     } catch (err) {
       onToast?.("Upload failed: " + (err.message || err), true);
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function remove() {
+    const oldPath = value;
+    onPath("");
+    if (oldPath) {
+      await deleteStorageFile(oldPath);
+      onToast?.("Image removed");
     }
   }
 
@@ -126,9 +140,13 @@ export function ImagePicker({ label, value, seed, onPath, onSeed, onToast }) {
         <img className="thumb" alt="" src={imageUrl({ image_path: value, seed }, 200, 250)} />
         <div style={{ flex: 1 }}>
           <input ref={inputRef} type="file" accept="image/*" onChange={pick} disabled={busy} />
-          <p className="help">{busy ? "Uploading…" : value ? `Stored: ${value}` : "No upload — using picsum seed below"}</p>
+          <p className="help">
+            {busy ? "Uploading…" : value
+              ? `Stored: ${value} — picking a new file will replace this one.`
+              : "No upload — using picsum seed below"}
+          </p>
           {value && (
-            <button type="button" className="btn ghost" onClick={() => onPath("")}>
+            <button type="button" className="btn ghost" onClick={remove}>
               Remove uploaded image
             </button>
           )}
@@ -178,20 +196,32 @@ export function VideoPicker({ label, value, onPath, onSize, onToast }) {
       return;
     }
     setBusy(true);
+    const oldPath = value;
     let dims = null;
     try {
       try { dims = await readVideoDimensions(file); } catch (_) { /* non-fatal */ }
       const path = await uploadImage(file, "videos");
       onPath(path);
       if (dims) onSize?.(dims.width, dims.height);
+      if (oldPath && oldPath !== path) await deleteStorageFile(oldPath);
+      const verb = oldPath ? "replaced" : "uploaded";
       onToast?.(dims
-        ? `Video uploaded — ${dims.width}×${dims.height} detected`
-        : "Video uploaded");
+        ? `Video ${verb} — ${dims.width}×${dims.height} detected`
+        : `Video ${verb}`);
     } catch (err) {
       onToast?.("Upload failed: " + (err.message || err), true);
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function remove() {
+    const oldPath = value;
+    onPath("");
+    if (oldPath) {
+      await deleteStorageFile(oldPath);
+      onToast?.("Video removed");
     }
   }
 
@@ -214,11 +244,11 @@ export function VideoPicker({ label, value, onPath, onSize, onToast }) {
           <input ref={inputRef} type="file" accept="video/*" onChange={pick} disabled={busy} />
           <p className="help">
             {busy ? "Uploading…" : value
-              ? `Stored: ${value}`
+              ? `Stored: ${value} — picking a new file will replace this one.`
               : "Optional — leave empty to keep this work as a photo. MP4/WebM recommended, < 100 MB."}
           </p>
           {value && (
-            <button type="button" className="btn ghost" onClick={() => onPath("")}>
+            <button type="button" className="btn ghost" onClick={remove}>
               Remove video
             </button>
           )}
