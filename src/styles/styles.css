@@ -369,6 +369,7 @@ button { font-family: inherit; cursor: pointer; }
 
 .tile {
   position: relative;
+  margin: 0;
   background: var(--paper-2);
   overflow: hidden;
   transition: transform 380ms cubic-bezier(.2,.6,.2,1);
