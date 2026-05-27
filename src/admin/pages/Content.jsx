@@ -1,5 +1,5 @@
 import { useSettings } from "../useSettings.js";
-import { useToast, Text, Area, Select, Toggle, StringList, ImagePicker, FocalPointPicker } from "../ui.jsx";
+import { useToast, Text, Area, Select, Toggle, StringList, ImagePicker, VideoPicker, FocalPointPicker } from "../ui.jsx";
 
 export default function Content() {
   const { settings, setPath, setSettings, save, saving } = useSettings();
@@ -100,6 +100,30 @@ export default function Content() {
         <h3>Ticker</h3>
         <StringList label="Items" items={s.ticker.items}
                     onChange={(v) => setPath("ticker.items", v)} />
+      </div>
+
+      {/* FEATURE VIDEO */}
+      <div className="card">
+        <h3>Feature video <em>(16:9, below gallery)</em></h3>
+        <Toggle label="Show feature video on the public site"
+                value={s.featureVideo?.enabled ?? false}
+                onChange={(v) => setPath("featureVideo.enabled", v)} />
+        <VideoPicker
+          label="Video file (16:9 recommended — plays auto-muted on loop)"
+          value={s.featureVideo?.video_path || ""}
+          onPath={(p) => setPath("featureVideo.video_path", p)}
+          onToast={showToast}
+        />
+        <ImagePicker
+          label="Poster image (shown before the video loads / when paused)"
+          value={s.featureVideo?.poster_path || ""}
+          seed={s.featureVideo?.poster_seed || "klova-feature"}
+          onPath={(p) => setPath("featureVideo.poster_path", p)}
+          onSeed={(v) => setPath("featureVideo.poster_seed", v)}
+          onToast={showToast}
+        />
+        <Text label="Caption (optional)" value={s.featureVideo?.caption || ""}
+              onChange={(v) => setPath("featureVideo.caption", v)} />
       </div>
 
       {/* ABOUT */}

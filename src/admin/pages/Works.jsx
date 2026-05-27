@@ -294,8 +294,10 @@ function SmartCollage({ rows, cats, onReorder, onEdit }) {
   const [previewIds, setPreviewIds] = useState(null);
   const lastShuffle = useRef(0);
 
+  // Mirror the public site: only published works show up in the collage
+  // editor so what the admin arranges here is exactly what visitors see.
   const sorted = useMemo(
-    () => [...rows].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    () => rows.filter((w) => w.published).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
     [rows]
   );
 

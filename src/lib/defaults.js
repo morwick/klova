@@ -138,6 +138,14 @@ export const DEFAULT_SETTINGS = {
     format: "35mm",
     edition: "/ 12",
   },
+  // Large 16:9 feature video that sits below the gallery on the public site.
+  featureVideo: {
+    enabled: false,
+    video_path: "",
+    poster_path: "",
+    poster_seed: "klova-feature",
+    caption: "",
+  },
   contact: {
     // WhatsApp number in international format, digits only (no +, spaces or -).
     whatsappNumber: "6285375219633",

@@ -99,7 +99,7 @@ function Ticker({ items }) {
 }
 
 // ─── filter + gallery ───────────────────────────────
-function FilterBar({ categories, cat, setCat, layout, setLayout, total, counts }) {
+function FilterBar({ categories, cat, setCat, total, counts }) {
   const cur = categories.find((c) => c.id === cat) || categories[0];
   return (
     <div className="filter">
@@ -115,11 +115,6 @@ function FilterBar({ categories, cat, setCat, layout, setLayout, total, counts }
             {c.label}
             <span className="chip-count">({fmt2(counts[c.id] ?? 0)})</span>
           </button>
-        ))}
-      </div>
-      <div className="layout-toggle" role="tablist">
-        {["editorial", "uniform", "dense"].map((l) => (
-          <button key={l} data-active={layout === l} onClick={() => setLayout(l)}>{l}</button>
         ))}
       </div>
     </div>
@@ -186,6 +181,27 @@ function Gallery({ items, layout, showCorner, onOpen }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// ─── feature video (16:9 below gallery) ─────────────
+function FeatureVideo({ fv }) {
+  if (!fv?.enabled || !fv.video_path) return null;
+  const src = storageUrl(fv.video_path);
+  const poster = fv.poster_path
+    ? imageUrl({ image_path: fv.poster_path, seed: fv.poster_seed }, 1920, 1080)
+    : undefined;
+  return (
+    <section className="feature-video">
+      <div className="feature-video-frame">
+        <video
+          src={src}
+          poster={poster}
+          autoPlay muted loop playsInline preload="auto"
+        />
+      </div>
+      {fv.caption && <div className="feature-video-cap">{fv.caption}</div>}
+    </section>
   );
 }
 
@@ -424,11 +440,13 @@ export default function PublicSite() {
         </header>
         <CatalogueBody
           filterCats={filterCats} cat={cat} setCat={setCat}
-          theme={settings.theme} total={items.length} counts={counts}
+          total={items.length} counts={counts}
           items={items} showCorner={settings.theme.showCorner}
           onOpen={(w) => setOpen(w.id)}
         />
       </div>
+
+      <FeatureVideo fv={settings.featureVideo} />
 
       <About about={settings.about} />
       <Services services={services} />
@@ -451,16 +469,14 @@ export default function PublicSite() {
   );
 }
 
-// Catalogue filter + gallery, with a visitor-side layout preview that
-// initialises from the admin-set theme.
-function CatalogueBody({ filterCats, cat, setCat, theme, total, counts, items, showCorner, onOpen }) {
-  const [layout, setLayout] = useState(theme.layout);
-  useEffect(() => { setLayout(theme.layout); }, [theme.layout]);
+// Catalogue filter + gallery. Layout is locked to "editorial" so the public
+// view mirrors the Smart Collage editor in admin exactly.
+function CatalogueBody({ filterCats, cat, setCat, total, counts, items, showCorner, onOpen }) {
   return (
     <>
       <FilterBar categories={filterCats} cat={cat} setCat={setCat}
-                 layout={layout} setLayout={setLayout} total={total} counts={counts} />
-      <Gallery items={items} layout={layout} showCorner={showCorner} onOpen={onOpen} />
+                 total={total} counts={counts} />
+      <Gallery items={items} layout="editorial" showCorner={showCorner} onOpen={onOpen} />
     </>
   );
 }

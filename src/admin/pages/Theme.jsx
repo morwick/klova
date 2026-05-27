@@ -22,9 +22,6 @@ export default function Theme() {
       <div className="card">
         <h3>Layout</h3>
         <div className="row">
-          <Select label="Default grid" value={t.layout}
-                  onChange={(v) => setPath("theme.layout", v)}
-                  options={["editorial", "uniform", "dense"]} />
           <div className="field">
             <label>Grid gap: {t.gap}px</label>
             <input type="range" min={0} max={32} step={2} value={t.gap}
